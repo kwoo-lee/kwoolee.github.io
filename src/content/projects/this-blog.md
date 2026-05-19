@@ -1,9 +1,9 @@
 ---
-title: 'kwoolee.github.io'
+title: 'kwoo-lee.github.io'
 description: 'A personal tech blog built with Astro, hosted on GitHub Pages, styled after Distill.'
 pubDate: 2026-05-19
-url: https://kwoolee.github.io
-repo: https://github.com/kwoolee/kwoolee.github.io
+url: https://kwoo-lee.github.io
+repo: https://github.com/kwoo-lee/kwoo-lee.github.io
 tag: 'Web'
 ---
 

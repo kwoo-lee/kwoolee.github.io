@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kwoolee.github.io/sitemap-index.xml
+Sitemap: https://kwoo-lee.github.io/sitemap-index.xml

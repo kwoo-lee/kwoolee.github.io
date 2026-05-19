@@ -4,7 +4,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://kwoolee.github.io',
+  site: 'https://kwoo-lee.github.io',
   integrations: [mdx(), sitemap()],
   markdown: {
     shikiConfig: {
