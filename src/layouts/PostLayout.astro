@@ -1,0 +1,33 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  tag?: string;
+}
+
+const { title, description, pubDate, updatedDate, tag } = Astro.props;
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title={title} description={description}>
+  <article>
+    <header class="post-header">
+      <div class="article-card__meta">
+        {tag && <span class="article-card__tag">{tag}</span>}
+        <span>{fmt(pubDate)}</span>
+        {updatedDate && <span>· updated {fmt(updatedDate)}</span>}
+      </div>
+      <h1>{title}</h1>
+      {description && <p style="color: var(--color-text-muted); font-size: 1.1rem; margin: 0;">{description}</p>}
+    </header>
+    <div class="post-body">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>

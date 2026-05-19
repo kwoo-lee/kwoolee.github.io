@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+
+const all = await getCollection('projects', ({ data }) => !data.draft);
+const pathOf = (id: string) => id.replace(/\/index$/, '');
+const projects = all
+  .filter((p) => !pathOf(p.id).includes('/'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="Projects" description="Things I've built or am building.">
+  <section class="post-header">
+    <h1>Projects</h1>
+    <p style="color: var(--color-text-muted); font-size: 1.1rem; margin: 0;">
+      A loose collection of things I've built.
+    </p>
+  </section>
+
+  <ul class="article-list">
+    {projects.map((project) => {
+      const path = `/projects/${project.id.replace(/\/index$/, '')}/`;
+      return (
+        <li>
+          <ArticleCard
+            href={path}
+            title={project.data.title}
+            description={project.data.description}
+            date={project.data.pubDate}
+            tag={project.data.tag}
+          />
+        </li>
+      );
+    })}
+  </ul>
+</BaseLayout>

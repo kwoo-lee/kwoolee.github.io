@@ -1,0 +1,74 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { SITE_DESCRIPTION, SITE_AUTHOR, CONTACT } from '../consts';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+
+const pathOf = (id: string) => id.replace(/\/index$/, '');
+const projects = (await getCollection('projects', ({ data }) => !data.draft))
+  .filter((p) => !pathOf(p.id).includes('/'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+---
+
+<BaseLayout description={SITE_DESCRIPTION}>
+  <section class="hero">
+    <h1>{SITE_AUTHOR}</h1>
+    <p>{SITE_DESCRIPTION}</p>
+  </section>
+
+  <div class="section-heading">
+    <h2>Recent writing</h2>
+    <a href="/blog">All posts →</a>
+  </div>
+  <ul class="article-list">
+    {posts.map((post) => (
+      <li>
+        <ArticleCard
+          href={`/blog/${post.id}/`}
+          title={post.data.title}
+          description={post.data.description}
+          date={post.data.pubDate}
+          tag={post.data.tag ?? 'Post'}
+        />
+      </li>
+    ))}
+  </ul>
+
+  <div class="section-heading">
+    <h2>Projects</h2>
+    <a href="/projects">All projects →</a>
+  </div>
+  <ul class="article-list">
+    {projects.map((project) => {
+      const path = `/projects/${project.id.replace(/\/index$/, '')}/`;
+      return (
+        <li>
+          <ArticleCard
+            href={path}
+            title={project.data.title}
+            description={project.data.description}
+            date={project.data.pubDate}
+            tag={project.data.tag}
+          />
+        </li>
+      );
+    })}
+  </ul>
+
+  <section id="contact" class="contact">
+    <div class="section-heading">
+      <h2>Contact</h2>
+    </div>
+    <ul>
+      <li><span>Email</span><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+      <li><span>GitHub</span><a href={CONTACT.github}>{CONTACT.githubLabel}</a></li>
+      <li><span>LinkedIn</span><a href={CONTACT.linkedin}>{CONTACT.linkedinLabel}</a></li>
+    </ul>
+    <a class="contact-button" href={`mailto:${CONTACT.email}`}>Contact Me</a>
+  </section>
+</BaseLayout>

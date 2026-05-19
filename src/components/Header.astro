@@ -1,0 +1,27 @@
+---
+import { SITE_TITLE, NAV_LINKS } from '../consts';
+
+const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<header class="site-header">
+  <div class="container-wide site-header__inner">
+    <a href="/" class="site-header__brand">{SITE_TITLE}</a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        {NAV_LINKS.map(({ href, label }) => {
+          const normalizedHref = href.replace(/\/$/, '') || '/';
+          const isActive =
+            normalizedHref === '/'
+              ? pathname === '/'
+              : pathname === normalizedHref || pathname.startsWith(`${normalizedHref}/`);
+          return (
+            <li>
+              <a href={href} aria-current={isActive ? 'page' : undefined}>{label}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  </div>
+</header>

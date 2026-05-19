@@ -1,0 +1,38 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  width?: 'narrow' | 'wide' | 'extrawide';
+  /** @deprecated use width="wide" */
+  wide?: boolean;
+}
+
+const { title, description, width, wide } = Astro.props;
+const resolved = width ?? (wide ? 'wide' : 'narrow');
+const containerClass =
+  resolved === 'extrawide'
+    ? 'container-extrawide'
+    : resolved === 'wide'
+      ? 'container-wide'
+      : 'container';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <div class={containerClass}>
+        <slot />
+      </div>
+    </main>
+    <Footer />
+  </body>
+</html>

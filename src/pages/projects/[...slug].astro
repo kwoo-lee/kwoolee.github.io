@@ -1,0 +1,171 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+type ProjectEntry = Awaited<ReturnType<typeof getCollection<'projects'>>>[number];
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', ({ data }) => !data.draft);
+  return projects.map((project) => {
+    const slug = project.id.replace(/\/index$/, '');
+    return {
+      params: { slug },
+      props: { project, allProjects: projects },
+    };
+  });
+}
+
+const { project, allProjects } = Astro.props;
+const { Content, headings } = await render(project);
+const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+
+const pathOf = (id: string) => id.replace(/\/index$/, '');
+const parentOf = (id: string) => {
+  const p = pathOf(id);
+  const idx = p.lastIndexOf('/');
+  return idx < 0 ? null : p.slice(0, idx);
+};
+const toUrl = (id: string) => `/projects/${pathOf(id)}/`;
+
+const projectRoot = project.id.includes('/') ? project.id.split('/')[0] : project.id;
+const isMultiPage =
+  project.id === projectRoot ||
+  allProjects.some((p) => p.id !== project.id && p.id.startsWith(`${projectRoot}/`));
+
+type NavEntry = { item: ProjectEntry; depth: number };
+
+const navEntries: NavEntry[] = [];
+
+if (isMultiPage) {
+  const inProject = allProjects.filter(
+    (p) => p.id === projectRoot || p.id.startsWith(`${projectRoot}/`),
+  );
+
+  const itemsByPath = new Map<string, ProjectEntry>();
+  const childrenByParent = new Map<string | null, ProjectEntry[]>();
+
+  for (const item of inProject) {
+    itemsByPath.set(pathOf(item.id), item);
+    const parent = parentOf(item.id);
+    if (!childrenByParent.has(parent)) childrenByParent.set(parent, []);
+    childrenByParent.get(parent)!.push(item);
+  }
+
+  const sortItems = (arr: ProjectEntry[]) =>
+    [...arr].sort((a, b) => {
+      if (a.id === `${projectRoot}/index`) return -1;
+      if (b.id === `${projectRoot}/index`) return 1;
+      const ao = a.data.navOrder ?? 999;
+      const bo = b.data.navOrder ?? 999;
+      if (ao !== bo) return ao - bo;
+      const al = a.data.navLabel ?? a.data.title;
+      const bl = b.data.navLabel ?? b.data.title;
+      return al.localeCompare(bl);
+    });
+
+  const depthOf = (item: ProjectEntry) => {
+    const segs = pathOf(item.id).split('/');
+    const rootSegs = projectRoot.split('/').length;
+    return Math.max(0, segs.length - rootSegs - 1);
+  };
+
+  const walk = (currentPath: string) => {
+    for (const child of sortItems(childrenByParent.get(currentPath) ?? [])) {
+      navEntries.push({ item: child, depth: depthOf(child) });
+      const childPath = pathOf(child.id);
+      if (childPath !== currentPath && childrenByParent.has(childPath)) {
+        walk(childPath);
+      }
+    }
+  };
+
+  const rootIndex = itemsByPath.get(projectRoot);
+  if (rootIndex) navEntries.push({ item: rootIndex, depth: 0 });
+  walk(projectRoot);
+}
+
+const hasLeftNav = navEntries.length > 1;
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout
+  title={project.data.title}
+  description={project.data.description}
+  width={hasLeftNav ? 'extrawide' : 'wide'}
+>
+  <article class={hasLeftNav ? 'project-shell project-shell--with-nav' : 'project-shell'}>
+    {hasLeftNav && (
+      <aside class="project-nav" aria-label="Project pages">
+        <h4 class="sidebar-heading">{projectRoot}</h4>
+        <ul>
+          {navEntries.map(({ item, depth }) => {
+            const isActive = item.id === project.id;
+            const label = item.data.navLabel ?? item.data.title.replace(/^.*?—\s*/, '');
+            return (
+              <li class={`nav-item nav-item--depth-${depth}`}>
+                <a href={toUrl(item.id)} aria-current={isActive ? 'page' : undefined}>{label}</a>
+              </li>
+            );
+          })}
+        </ul>
+      </aside>
+    )}
+
+    <div class="project-main">
+      <header class="post-header">
+        <div class="article-card__meta">
+          {project.data.tag && <span class="article-card__tag">{project.data.tag}</span>}
+          <span>{fmt(project.data.pubDate)}</span>
+        </div>
+        <h1>{project.data.title}</h1>
+        {project.data.description && (
+          <p class="post-header__lede">{project.data.description}</p>
+        )}
+      </header>
+
+      <div class="article-grid">
+        <div class="post-body">
+          <Content />
+        </div>
+
+        <aside class="article-sidebar">
+          {tocHeadings.length > 0 && (
+            <nav class="toc" aria-label="Table of contents">
+              <h4 class="sidebar-heading">Contents</h4>
+              <ul>
+                {tocHeadings.map((h) => (
+                  <li class={`toc__item toc__item--depth-${h.depth}`}>
+                    <a href={`#${h.slug}`}>{h.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
+          {(project.data.url || project.data.repo) && (
+            <div class="sidebar-block">
+              <h4 class="sidebar-heading">Links</h4>
+              <ul>
+                {project.data.url && (
+                  <li><a href={project.data.url}>Visit →</a></li>
+                )}
+                {project.data.repo && (
+                  <li><a href={project.data.repo}>Source →</a></li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          <div class="sidebar-block">
+            <h4 class="sidebar-heading">More</h4>
+            <ul>
+              <li><a href="/projects">All projects →</a></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
